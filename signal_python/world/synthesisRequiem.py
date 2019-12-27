@@ -19,8 +19,6 @@ def synthesisRequiem(source_object, filter_object, seeds_signals):
                                               seeds_signals['noise'],
                                               source_object['aperiodicity'])
 
-    wavwrite('excite.wav', filter_object['fs'], ( excitation_signal * 2 ** 15).astype(np.int16))
-    
     y = get_waveform(excitation_signal,
                      filter_object['spectrogram'],
                      source_object['temporal_positions'],
@@ -64,9 +62,7 @@ def get_excitation_signal(temporal_positions,
         response = get_one_periodic_excitation(number_of_aperiodicities, pulse_seed, interpolated_aperiodicity[:, pulse_locations_index[i]-1], noise_size)
         periodic_component[output_buffer_index.astype(int)-1] += response
     excitation_signal = periodic_component + aperiodic_component
-    wavwrite('excite_periodic.wav', fs, ( periodic_component * 2 ** 15).astype(np.int16))
-    wavwrite('excite_aperiodic.wav', fs, ( aperiodic_component * 2 ** 15).astype(np.int16))
-    return excitation_signal
+    return excitation_signal, periodic_component, aperiodic_component
 
 
 def get_one_periodic_excitation(number_of_aperiodicities, pulse_seed, aperiodicity, noise_size):

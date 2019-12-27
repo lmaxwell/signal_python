@@ -51,7 +51,6 @@ def estimate_one_slice(x: np.ndarray, fs: int, current_f0: float, current_positi
     '''
     # First step: F0-adaptive windowing
     waveform = calculate_windowed_waveform(x, fs, current_f0, current_position)
-    print(waveform.shape,fft_size)
     power_spectrum, pitch_syn_spectrum = get_power_spectrum(waveform, fs, fft_size, current_f0)
     # Second step: Frequency domain smoothing
     smoothed_spectrum = linear_smoothing(power_spectrum, current_f0, fs, fft_size)
