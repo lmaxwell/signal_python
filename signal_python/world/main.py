@@ -18,6 +18,7 @@ from .get_seeds_signals import get_seeds_signals
 from .synthesis import synthesis
 from .synthesisRequiem import synthesisRequiem
 from .swipe import swipe
+import time
 
 
 class World(object):
@@ -120,6 +121,7 @@ class World(object):
         '''
         if fft_size != None:
             f0_floor = 3.0 * fs / fft_size
+        start_time=time.time()
         if f0_method == 'dio':
             source = dio(x, fs,
                          f0_floor=f0_floor, f0_ceil=f0_ceil, channels_in_octave=channels_in_octave, target_fs=target_fs,
@@ -132,11 +134,16 @@ class World(object):
             source = swipe(fs, x, plim=[f0_floor, f0_ceil], sTHR=0.3)
         else:
             raise Exception
+        print("f0 cost {}".format(time.time()-start_time))
+        start_time=time.time()
         filter = cheaptrick(x, fs, source, fft_size=fft_size)
+        print("cheaptrick cost {}".format(time.time()-start_time))
+        start_time=time.time()
         if is_requiem:
             source = d4cRequiem(x, fs, source, fft_size=fft_size)
         else:
             source = d4c(x, fs, source, fft_size_for_spectrum=fft_size)
+        print("d4c {}".format(time.time()-start_time))
 
         return {'temporal_positions': source['temporal_positions'],
                 'vuv': source['vuv'],
