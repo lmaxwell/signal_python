@@ -5,6 +5,7 @@ import numpy as np
 from scipy.io.wavfile import read as wavread
 from scipy.io.wavfile import write as wavwrite
 from scipy import signal
+from matplotlib import pyplot as plt
 
 from signal_python.world import main
 from signal_python.world import synthesisRequiem
@@ -59,13 +60,13 @@ def psd2lpc(psd):
 
 def inverse_lpc_fftconvolve(x,dat):
     start_time = time.time()
+    fft_size = (dat['spectrogram'].shape[0]-1)*2
     glottal_lpcs,glottal_gains,lpcs,gains=psd2lpc(dat['spectrogram'])
     print("psd2lpc cost {}".format(time.time()-start_time))
     x_res = np.zeros([x.shape[0]+100])
     x_glottal_res = np.zeros([x.shape[0]+100])
     f0_sequence = dat['f0']
     temporal_positions = dat['temporal_positions']
-    fft_size = (dat['spectrogram'].shape[0]-1)*2
 
     start_time=time.time()
     recons_psds=[]
@@ -113,7 +114,7 @@ x_res,x_glottal_res,recons_psds,recons_vt_psds = inverse_lpc_fftconvolve(x,dat)
 wavwrite('x_res.wav', fs, (x_res * 2 ** 15).astype(np.int16))
 wavwrite('x_glottal_res.wav', fs, (x_glottal_res * 2 ** 15).astype(np.int16))
 
-shift = 6
+shift = 5
 import pyrubberband as pyrb
 x_res = pyrb.pitch_shift(x_res,fs,shift)
 
@@ -130,20 +131,44 @@ y_from_glottal = synthesisRequiem.get_waveform(x_glottal_res,
                     dat['f0'],
                     dat['fs'])
 
-x_shift = pyrb.pitch_shift(x,fs,shift)
-wavwrite('x_shift.wav', fs, (x_shift * 2 ** 15).astype(np.int16))
 wavwrite('x_recons.wav', fs, (y * 2 ** 15).astype(np.int16))
 wavwrite('x_recons_glottal.wav', fs, (y_from_glottal * 2 ** 15).astype(np.int16))
 
+from scipy import interpolate
+import copy
 
-dat_shift,_ = vocoder.encode(fs, x_shift, f0_method='swipe', is_requiem=True) # use requiem analysis and synthesis
-x_res,x_glottal_res,recons_psds,recons_vt_psds = inverse_lpc_fftconvolve(x_shift,dat_shift)
+import time
+
+def semitone2ratio(semitone):
+    return np.power(10,semitone*100*np.log10(2)/1200)
+
+ratio = semitone2ratio(shift)
+
+fft_size = (dat['spectrogram'].shape[0]-1)*2
+
+start_time = time.time()
+dat_shift = copy.deepcopy(dat) 
+plt.subplot(2,1,1)
+plt.plot(dat_shift['spectrogram'][:,300])  
+print(dat_shift['spectrogram'][-20:,300])
+for i in range(dat_shift['spectrogram'].shape[1]):
+    interp_f = interpolate.interp1d(np.arange(0,fft_size//2+1),dat_shift['spectrogram'][:,i],kind='cubic',bounds_error=False,fill_value='extrapolate')
+    dat_shift['spectrogram'][:,i] = interp_f(np.arange(0,fft_size//2+1)*ratio)
+    #dat_shift['spectrogram'][:,i] = np.interp(dat_shift['spectrogram'][:,i],np.arange(0,fft_size//2+1),np.arange(0,fft_size//2+1)*ratio)
+plt.subplot(2,1,2)
+plt.plot(dat_shift['spectrogram'][:,300])  
+print(dat_shift['spectrogram'][-20:,300])
+plt.savefig("test.png")
+print("interp time: {}".format(time.time()-start_time))
+x_res,x_glottal_res,recons_psds,recons_vt_psds = inverse_lpc_fftconvolve(x,dat)
 y = synthesisRequiem.get_waveform(x_res,
-                    dat['spectrogram'],
+                    dat_shift['spectrogram'],
                     dat_shift['temporal_positions'],
                     dat_shift['f0'],
                     dat_shift['fs'])
-wavwrite('x_shift_preserve.wav', fs, (y * 2 ** 15).astype(np.int16))
+wavwrite('x_prwrap.wav', fs, (y * 2 ** 15).astype(np.int16))
+x_shift = pyrb.pitch_shift(y,fs,shift)
+wavwrite('x_prwap_shift.wav', fs, (x_shift * 2 ** 15).astype(np.int16))
 
 
 
