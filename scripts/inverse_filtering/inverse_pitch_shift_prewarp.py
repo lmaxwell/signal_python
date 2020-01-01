@@ -114,7 +114,7 @@ x_res,x_glottal_res,recons_psds,recons_vt_psds = inverse_lpc_fftconvolve(x,dat)
 wavwrite('x_res.wav', fs, (x_res * 2 ** 15).astype(np.int16))
 wavwrite('x_glottal_res.wav', fs, (x_glottal_res * 2 ** 15).astype(np.int16))
 
-shift = 5
+shift = -12
 import pyrubberband as pyrb
 x_res = pyrb.pitch_shift(x_res,fs,shift)
 
@@ -173,5 +173,14 @@ wavwrite('x_prwap_shift.wav', fs, (x_shift * 2 ** 15).astype(np.int16))
 
 
 
+
+
+seeds_signals = get_seeds_signals(fs)
+dat,_ = vocoder.encode(fs, x, f0_method='swipe', is_requiem=True) # use requiem analysis and synthesis
+dat['f0'] = dat['f0']*ratio
+
+y = synthesisRequiem.synthesisRequiem(dat,dat,seeds_signals)
+
+wavwrite('x_shift_world.wav', fs, (y * 2 ** 15).astype(np.int16))
 
 
