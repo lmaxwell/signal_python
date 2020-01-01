@@ -4,6 +4,7 @@ from scipy.io.wavfile import read
 from decimal import Decimal, ROUND_HALF_UP
 from scipy import interpolate
 from matplotlib import mlab
+import numpy.matlib
 
 
 def swipe(fs, x, plim=[71, 800], dt=0.005, sTHR=float('-inf')):

@@ -11,7 +11,7 @@ from decimal import Decimal, ROUND_HALF_UP
 from scipy.io.wavfile import write as wavwrite
 
 def synthesisRequiem(source_object, filter_object, seeds_signals):
-    excitation_signal = get_excitation_signal(source_object['temporal_positions'],
+    excitation_signal,_,_ = get_excitation_signal(source_object['temporal_positions'],
                                               filter_object['fs'],
                                               source_object['f0'],
                                               source_object['vuv'],
@@ -19,6 +19,8 @@ def synthesisRequiem(source_object, filter_object, seeds_signals):
                                               seeds_signals['noise'],
                                               source_object['aperiodicity'])
 
+    print(excitation_signal)
+    
     y = get_waveform(excitation_signal,
                      filter_object['spectrogram'],
                      source_object['temporal_positions'],
